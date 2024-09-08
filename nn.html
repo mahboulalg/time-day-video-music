@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>time day video music</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-color: #000;
+            color: #fff;
+        }
+        #datetime {
+            position: relative;
+            z-index: 2;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        #time {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        #date {
+            font-size: 1.2em;
+        }
+        #video-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+        #video-background iframe {
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            z-index: 2;
+            text-align: center;
+        }
+        #controls input {
+            margin: 5px;
+            padding: 10px;
+            width: 300px;
+        }
+        #volume-slider {
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div id="datetime">
+        <div id="time">00:00:00</div>
+        <div id="date">YYYY-MM-DD</div>
+    </div>
+    <div id="video-background">
+        <iframe id="video" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+    <div id="controls">
+        <input type="text" id="video-url" placeholder="أدخل رابط فيديو يوتيوب" />
+        <input type="text" id="music-url" placeholder="أدخل رابط موسيقى يوتيوب" />
+        <input type="range" id="volume-slider" min="0" max="100" step="1" value="50" />
+    </div>
+    <!-- Hidden div for music player -->
+    <div id="music" style="display:none;"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        let musicPlayer;
+
+        // تحديث الوقت والتاريخ
+        function updateTime() {
+            const now = moment();
+            const time = now.format('HH:mm:ss');
+            const date = now.format('YYYY-MM-DD');
+
+            document.getElementById('time').textContent = time;
+            document.getElementById('date').textContent = date;
+        }
+
+        setInterval(updateTime, 1000);
+        updateTime(); // Initialize immediately
+
+        // التعامل مع إدخال رابط الفيديو
+        document.getElementById('video-url').addEventListener('input', function() {
+            const videoUrl = this.value;
+            const videoId = extractYouTubeID(videoUrl);
+            if (videoId) {
+                const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&quality=hd720`;
+                document.getElementById('video').src = embedUrl;
+            }
+        });
+
+        // التعامل مع إدخال رابط الموسيقى
+        document.getElementById('music-url').addEventListener('input', function() {
+            const musicUrl = this.value;
+            const musicId = extractYouTubeID(musicUrl);
+            if (musicId) {
+                loadMusicPlayer(musicId);
+            }
+        });
+
+        // التحكم بمستوى الصوت
+        document.getElementById('volume-slider').addEventListener('input', function() {
+            const volume = this.value;
+            if (musicPlayer) {
+                musicPlayer.setVolume(volume);
+            }
+        });
+
+        // تحميل مشغل الموسيقى
+        function loadMusicPlayer(videoId) {
+            if (musicPlayer) {
+                musicPlayer.loadVideoById(videoId);
+            } else {
+                musicPlayer = new YT.Player('music', {
+                    videoId: videoId,
+                    events: {
+                        'onReady': onPlayerReady
+                    }
+                });
+            }
+        }
+
+        function onPlayerReady(event) {
+            event.target.playVideo();
+            musicPlayer.setVolume(document.getElementById('volume-slider').value); // Set initial volume
+        }
+
+        // استخراج معرّف الفيديو من رابط اليوتيوب
+        function extractYouTubeID(url) {
+            const regExp = /^.*(youtu\.be\/|v\/|\/u\/\w\/|embed\/|watch\?v=|\&v=|watch\?.*v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+    </script>
+</body>
+</html>
